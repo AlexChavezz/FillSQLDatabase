@@ -4,6 +4,23 @@ const mysql = require('mysql2');
 const countries = require('./countries');
 const generes = require('./generes');
 
+/*
+
+    STEP BY STEP
+
+    1.- connect to mongoDB.
+    2.- Get all documents from movies collection and only the fields we want.
+    3.- Process all documents to divide data.
+
+
+
+
+    NOTES:
+    REALIZA A RESEARCH ABOUT THE BEST WAY TO CONNECT TO FILL A ENTITIE WHEN THERE IS A M TO N RELASHIONSHIP.
+
+*/
+
+
 class MongoDBDatabase
 {
     constructor()
