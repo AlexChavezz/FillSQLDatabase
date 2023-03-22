@@ -27,33 +27,35 @@ class MongoDBDatabase
     {
         this.client = new MongoClient(process.env.MONGOCONNECTIONSTRING);
         this.collection = this.client.db('sample_mflix').collection('movies');
-        this.movies = [];
     }
-    getRatedCategories = () =>
-        new Promise(async (resolve, reject) => {
-            let ratedCategories = [];
-            try {
-                //get all documents from collection
-                const results = await collection.find({}).project({ _id: 0, rated: 1 }).toArray();
-                results.forEach((ratedCategory) => {
-                    // if rated category is not defined return
-                    if (!ratedCategory.rated) {
-                        return;
-                    }
-                    // if category is not in array add it
-                    if (!ratedCategories.includes(ratedCategory.rated)) {
-                        ratedCategories = [...ratedCategories, ratedCategory.rated]
-                    }
-                })
-                // send rated categories
-                resolve(ratedCategories)
-            } catch (error) {
-                reject(error)
-            } finally {
-               
-                console.log('done')
+    getMoviesData = () =>
+    new Promise(async (resolve, reject) => {
+        this.client.connect();
+        const pipeline = [
+            {
+               $project: {
+                    _id: 0, title: 1, rated: 1, year: 1,  
+                }
+            },
+            {
+                $limit: 10
             }
-        })
+        ]
+        try
+        {
+            const moviesData = await this.collection.aggregate(pipeline).toArray();
+            resolve(moviesData);
+        }
+        catch (e)
+        {
+            reject(e)
+            console.error(e)
+        }
+        finally 
+        {
+            this.client.close();
+        }
+    })
 }
 
 class MysqlDataBase
@@ -101,17 +103,11 @@ class MysqlDataBase
         });
 }
 
-
-
-/*
-    DEFINE MONGODB CONFIG
-*/
-
-// define mongoDB client
-const client = new MongoClient(process.env.MONGOCONNECTIONSTRING);
-//define database and collection
-const collection = client.db('sample_mflix').collection('movies');
-
+(async ()=>{
+    const mongoDB = new MongoDBDatabase();
+    const moviesData = await mongoDB.getMoviesData();
+    console.table(moviesData);
+})();
 
 /*
     DEFINE MYSQL CONFIG
@@ -313,25 +309,36 @@ async function loadMoviesToMySQL(connection)
         //load movies to mysql
         let bigQuery = "INSERT INTO peliculas (nombre, año, duracion, id_pais, id_clasificacion) VALUES ";
         movies.forEach((movie, index) => {
-            if (!movie.rated) {
-                movie.rated = 'Not Rated';
-            }
-            if( !movie.title)
-            {
-                return;
-            }
-            if(!movie.countries){
-                return;
-            }
-            if(typeof movie.year === "string")
-            {
-                movie.year = 1991;
-            }
-            if(movie.year<=1901)
-            {
-                movie.year = new Date().getFullYear();
-            }
+           
+            // ->  change this concatenations for a switch
+           
+            // if (!movie.rated) {
+            //     movie.rated = 'Not Rated';
+            // }
+            // if( !movie.title)
+            // {
+            //     return;
+            // }
+            // if(!movie.countries){
+            //     return;
+            // }
+            // if(typeof movie.year === "string")
+            // {
+            //     movie.year = 1991;
+            // }
+            // if(movie.year<=1901)
+            // {
+            //     movie.year = new Date().getFullYear();
+            // }
 
+            switch(movie)
+            {
+                case !movie.title:
+                    movie.rated = 'Not Rated';
+                    break;
+                case !movie.countries:
+                break;
+            }
 
             // generar número aleatorio para las horas (entre 0 y 23)
 const horas = Math.floor(Math.random() * 3);
@@ -368,7 +375,7 @@ const timeString = `${horas.toString().padStart(2, '0')}:${minutos.toString().pa
         console.log(err)
     }
 }
-loadMoviesToMySQL();
+// loadMoviesToMySQL();
 
 
 async function getRatedTableValues()
